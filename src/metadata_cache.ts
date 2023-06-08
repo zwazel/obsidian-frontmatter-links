@@ -16,26 +16,28 @@ function addFrontmatterLinksToCache(file: TFile, frontmatter: any) {
     for (let key of Object.keys(frontmatter)) {
         const value = frontmatter[key];
         if (typeof(value) === "string") {
-            const match: RegExpMatchArray | null = value.match(/\[\[(.+)\|.+\]\]/m) || value.match(/\[\[(.+)\]\]/m) || value.match(/\[.+\]\((.+)\)/m);
-            
-            if (!match) { continue; }
-            let href = match[1];
+            const pattern = /\[\[(.+?\]?)(?:\|(.+?))?\]\]|\[(.+?)\]\((.+?)\)/gm;
+            let matches = [...value.matchAll(pattern)];
+            matches.forEach((match) => {
+                if (!match) { return; }
+                let href = (match[4] === undefined ? match[1] : match[4]);
 
-            if (isUri(href)) { continue; }
+                if (isUri(href)) { return; }
 
-            let f = app.metadataCache.getFirstLinkpathDest(href, "");
-            let links: Record<string, Record<string, number>>;
-            if (f instanceof TFile) {
-                href = f.path;
-                links = app.metadataCache.resolvedLinks;
-            } else {
-                links = app.metadataCache.unresolvedLinks;
-            }
+                let f = app.metadataCache.getFirstLinkpathDest(href, "");
+                let links: Record<string, Record<string, number>>;
+                if (f instanceof TFile) {
+                    href = f.path;
+                    links = app.metadataCache.resolvedLinks;
+                } else {
+                    links = app.metadataCache.unresolvedLinks;
+                }
 
-            if (links[file.path][href]) {
-                links[file.path][href] += 1;
-            } else {
-                links[file.path][href] = 1;
+                if (links[file.path][href]) {
+                    links[file.path][href] += 1;
+                } else {
+                    links[file.path][href] = 1;
+                }
             }
         } else if (typeof(value) === "object") {
             addFrontmatterLinksToCache(file, value);

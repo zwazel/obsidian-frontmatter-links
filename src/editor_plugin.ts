@@ -73,32 +73,57 @@ export class FrontmatterLinksEditorPlugin implements PluginValue {
 
                     // Find links inside of quotes.
                     if (node.name === "hmd-frontmatter_string") {
+                        const pattern = /\[\[(.+?\]?)(?:\|(.+?))?\]\]|\[(.+?)\]\((.+?)\)/gm;
                         const text = view.state.sliceDoc(node.from + 1, node.to - 1);
 
                         let match: RegExpMatchArray | null;
                         let href: string | undefined;
                         let alias: string | undefined;
                         let markdownLink: boolean | undefined;
-                        if (match = text.match(/\[\[(.+)\|(.+)\]\]/m)) {
-                            href = match[1];
-                            alias = match[2];
-                        } else if (match = text.match(/\[\[(.+)\]\]/m)) {
-                            href = match[1];
-                        } else if (match = text.match(/\[(.+)\]\((.+)\)/m)) {
-                            href = match[2];
-                            alias = match[1];
-                            markdownLink = true;
-                        } else if (isUri(text)) {
-                            href = text;
-                        }
-                        if (href) {
-                            linkSlices.push({
-                                originalText: text,
-                                href,
-                                alias,
-                                from: node.from + (settings.hideQuotes ? 0 : 1),
-                                to: node.to - (settings.hideQuotes ? 0 : 1),
-                                markdownLink
+                        let start = node.from + 1;
+                        let from: integer | undefined;
+                        let to: integer | undefined;
+                        let matches = [...text.matchAll(pattern)];
+                        
+                        if (matches.length === 0) {
+                            if (isUri(text)) {
+                                linkSlices.push({
+                                    originalText: text,
+                                    href: text,
+                                    alias,
+                                    from: node.from + (settings.hideQuotes ? 0 : 1),
+                                    to: node.to - (settings.hideQuotes ? 0 : 1),
+                                    markdownLink
+                                });
+                            }
+                        } else {
+                            matches.forEach((match) => {
+                                from = start + match.index;
+                                to = from + match[0].length;
+                                
+                                if (match[4] === undefined) {
+                                    markdownLink = false;
+                                    href = match[1];
+                                    alias = match[2];
+                                } else {
+                                    markdownLink = true;
+                                    href = match[4];
+                                    alias = match[3];
+                                }
+                                
+                                let isEntireString = from === start && to === node.to - 1;
+                                let quoteOffset = (isEntireString && settings.hideQuotes) ? 1 : 0
+                                
+                                if (href) {
+                                    linkSlices.push({
+                                        originalText: match[0],
+                                        href,
+                                        alias,
+                                        from: from - quoteOffset,
+                                        to: to + quoteOffset,
+                                        markdownLink
+                                    });
+                                }
                             });
                         }
                     }
