@@ -1,8 +1,7 @@
-import { Plugin, TFile } from 'obsidian';
-import { FRONTMATTER_LINKS_EDITOR_PLUGIN } from './editor_plugin';
-import { onMetadataCacheResolve } from './metadata_cache';
-import { onVaultFileRename } from './rename_links';
-import { DEFAULT_SETTINGS, FrontmatterLinksSettings, FrontmatterLinksSettingTab } from './settings';
+import {Plugin, TFile} from 'obsidian';
+import {FRONTMATTER_LINKS_EDITOR_PLUGIN} from './editor_plugin';
+import {onMetadataCacheResolve} from './metadata_cache';
+import {DEFAULT_SETTINGS, FrontmatterLinksSettings, FrontmatterLinksSettingTab} from './settings';
 
 export default class FrontmatterLinksPlugin extends Plugin {
 	settings: FrontmatterLinksSettings;
@@ -19,7 +18,9 @@ export default class FrontmatterLinksPlugin extends Plugin {
 
 		const plugin = this;
 		this.registerEvent(app.metadataCache.on("resolve", (file: TFile) => {
-			if (!plugin.settings.addToGraph) { return; }
+			if (!plugin.settings.addToGraph) {
+				return;
+			}
 
 			onMetadataCacheResolve(file);
 		}));
@@ -31,7 +32,8 @@ export default class FrontmatterLinksPlugin extends Plugin {
 		}));
 	}
 
-	onunload() { }
+	onunload() {
+	}
 
 	async loadSettings() {
 		this.settings = Object.assign(
